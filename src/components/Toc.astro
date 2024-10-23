@@ -1,0 +1,60 @@
+---
+import type { MarkdownHeading } from "astro";
+
+type Headings = {
+  text: string;
+  slug: string;
+  depth: number;
+  subHeadings: Headings[];
+};
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const toc = buildToc(headings);
+
+// toc遍历h2，但不排除正文会嵌套标题导致toc显示混乱
+function buildToc(headings: MarkdownHeading[]) {
+  const toc: Headings[] = [];
+  headings.forEach((h) => {
+    const heading = { ...h, subHeadings: [] as Headings[] };
+    if (heading.depth === 2) {
+      toc.push(heading);
+    } else {
+      let parent = toc[toc.length - 1];
+      if (parent) {
+        parent.subHeadings.push(heading);
+      }
+    }
+  });
+  return toc;
+}
+
+// const filteredHeadings = headings.filter((heading) => heading.depth <= 2);
+---
+
+<nav class="toc">
+  <h2>Table of Contents</h2>
+  <ul>
+    {
+      toc.map((heading) => {
+        return (
+          <li>
+            <a href={"#" + heading.slug}>{heading.text}</a>
+            {heading.subHeadings.length > 0 && (
+              <ul>
+                {heading.subHeadings.map((subheading) => (
+                  <li>
+                    <a href={"#" + subheading.slug}>{subheading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })
+    }
+  </ul>
+</nav>

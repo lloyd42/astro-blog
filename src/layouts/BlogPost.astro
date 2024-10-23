@@ -1,85 +1,166 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
+import type { CollectionEntry } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import TableOfContents from "../components/Toc.astro";
+import type { MarkdownHeading } from "astro";
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<"blog">["data"] & {
+  minutesRead: string | undefined;
+  modifiedDate: string | undefined;
+  headings: MarkdownHeading[] | undefined;
+};
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  heroImage,
+  minutesRead,
+  modifiedDate,
+  headings,
+} = Astro.props;
 ---
 
 <html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
-	</head>
+  <head>
+    <BaseHead title={title!} description={description!} />
+    <style>
+      main {
+        width: calc(100% - 2em);
+        max-width: 100%;
+        margin: 0;
+      }
+      .hero-image {
+        width: 100%;
+      }
+      .hero-image img {
+        display: block;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: var(--box-shadow);
+      }
+      .prose {
+        width: 720px;
+        max-width: calc(100% - 2em);
+        margin: auto;
+        padding: 1em;
+        color: rgb(var(--gray-dark));
+      }
+      .title {
+        margin-bottom: 1em;
+        padding: 1em 0;
+        text-align: center;
+        line-height: 1;
+      }
+      .title h1 {
+        margin: 0 0 0.5em 0;
+      }
+      .date {
+        margin-bottom: 0.5em;
+        color: rgb(var(--gray));
+      }
+      .last-updated-on {
+        font-style: italic;
+      }
+      .minutes-read {
+        color: rgb(var(--gray));
+      }
+    </style>
+  </head>
 
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <img width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
-	</body>
+  <body>
+    <Header />
+    <main>
+      <article>
+        <div class="hero-image">
+          {
+            heroImage && (
+              <img width={1020} height={510} src={heroImage} alt="" />
+            )
+          }
+        </div>
+        <div class="prose">
+          <div class="title">
+            <h1>{title}</h1>
+            <div class="date">
+              {!modifiedDate && <FormattedDate date={pubDate!} />}
+              <!-- {
+                updatedDate && (
+                  <div class="last-updated-on">
+                    Last updated on <FormattedDate date={updatedDate} />
+                  </div>
+                )
+              } -->
+              {
+                modifiedDate && (
+                  <div class="last-updated-on">
+                    最后更新于
+                    <FormattedDate date={new Date(modifiedDate)} />
+                  </div>
+                )
+              }
+            </div>
+            <br />
+            <div class="minutes-read">{minutesRead}</div>
+            <br />
+            <hr />
+          </div>
+          {headings && <TableOfContents headings={headings} />}
+          <slot />
+        </div>
+      </article>
+    </main>
+    <script>
+      // 定义一个名为 “copyButtonLabel” 的变量，并将其值设置为 “Copy Code”。此变量将用于设置将添加到代码块的复制按钮的标签。
+      let copyButtonLabel = "Copy Code";
+      // 使用 document.querySelectorAll 函数选择页面的所有 pre 元素。为了使选定的 elmenet 可迭代，使用 Array.from 方法将它们转换为数组，并将其存储在 “codeBlock” 变量中。
+      let codeBlocks = Array.from(document.querySelectorAll("pre"));
+
+      // 对于每个代码块，创建一个新的 “div” 元素并将其 “position” 属性设置为 “relative”。这将用作代码块的包装器，并确保复制按钮相对于代码块的正确定位。
+      for (let codeBlock of codeBlocks) {
+        let wrapper = document.createElement("div");
+        wrapper.style.position = "relative";
+
+        // copy-code 类用于设置按钮的样式。由于我们使用 position： relative 属性创建了包装器元素，因此将 copy-code 的位置设置为 absolute。
+        let copyButton = document.createElement("button");
+        copyButton.className = "copy-code";
+        copyButton.innerHTML = copyButtonLabel;
+
+        // 将代码块的 “tabindex” 属性设置为 “0” 并附加复制按钮。这将使代码块可聚焦，并允许用户使用键盘与之交互
+        codeBlock.setAttribute("tabindex", "0");
+        codeBlock.appendChild(copyButton);
+        // 将代码块与新创建的 “div” 元素包装在一起，并将其插入到其父元素中的代码块之前。
+        codeBlock.parentNode?.insertBefore(wrapper, codeBlock);
+        wrapper.appendChild(codeBlock);
+
+        // 在 copy 按钮中添加一个 click 事件侦听器，并在单击时调用 “copyCode” 函数。
+        copyButton.addEventListener("click", async () => {
+          await copyCode(codeBlock, copyButton);
+        });
+      }
+
+      // “copyCode” 函数是一个异步函数，它将代码块和按钮作为参数。它选择代码块中的 “code” 元素，获取其内部文本，并使用 “navigator.clipboard.writeText” 方法将其写入剪贴板。
+      async function copyCode(
+        block: HTMLPreElement,
+        button: HTMLButtonElement
+      ) {
+        let code = block.querySelector("code");
+        let text = code?.innerText;
+
+        await navigator.clipboard.writeText(text!);
+
+        // 为了提供代码已被复制的视觉反馈，按钮的内部文本将更改为“Code Copied”，并在 700 毫秒后将其设置为默认值。
+        button.innerText = "Code Copied";
+
+        setTimeout(() => {
+          button.innerText = copyButtonLabel;
+        }, 700);
+      }
+    </script>
+    <Footer />
+  </body>
 </html>
